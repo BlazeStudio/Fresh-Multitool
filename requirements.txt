@@ -1,0 +1,4 @@
+rich>=13.7
+prompt_toolkit>=3.0.40
+psutil>=5.9
+pyfiglet>=0.8

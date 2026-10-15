@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.history
+multitool.log
+config.json.bak
+config.json.tmp
+.hotkey_status

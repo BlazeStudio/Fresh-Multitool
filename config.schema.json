@@ -1,0 +1,114 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Fresh Multitool config",
+  "type": "object",
+  "definitions": {
+    "names": {
+      "description": "Имя процесса или список имён",
+      "oneOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" } }]
+    },
+    "window": {
+      "description": "Как показать окно запускаемой программы",
+      "enum": ["normal", "minimized", "maximized", "hidden"]
+    },
+    "args": {
+      "description": "Аргументы командной строки — строкой или списком",
+      "oneOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" } }]
+    },
+    "step": {
+      "type": "object",
+      "properties": {
+        "path": { "type": "string", "description": "Что запустить: exe, bat, lnk, папка или ссылка" },
+        "args": { "$ref": "#/definitions/args" },
+        "cwd": { "type": "string", "description": "Рабочая папка (по умолчанию — папка файла)" },
+        "admin": { "type": "boolean", "description": "Запросить права администратора (UAC)" },
+        "window": { "$ref": "#/definitions/window" },
+        "command": { "type": "string", "description": "Команда cmd вместо path" },
+        "wait": { "type": "number", "description": "Пауза в секундах" },
+        "unless_running": { "$ref": "#/definitions/names", "description": "Пропустить шаг, если такой процесс уже запущен" }
+      }
+    },
+    "item": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string", "description": "Название в меню" },
+        "icon": { "type": "string", "description": "Эмодзи перед названием" },
+        "description": { "type": "string", "description": "Короткая подпись серым" },
+        "key": { "type": "string", "description": "Своя клавиша вместо автоматического номера" },
+        "aliases": { "type": "array", "items": { "type": "string" }, "description": "Короткие имена для запуска: cs, tg…" },
+        "path": { "type": "string", "description": "Что запустить: exe, bat, lnk, папка, ссылка (https://, steam://). Переменные %APPDATA% работают" },
+        "args": { "$ref": "#/definitions/args" },
+        "cwd": { "type": "string", "description": "Рабочая папка (по умолчанию — папка файла)" },
+        "admin": { "type": "boolean", "description": "Запускать от имени администратора" },
+        "window": { "$ref": "#/definitions/window" },
+        "process": { "$ref": "#/definitions/names", "description": "Процесс для индикатора «● работает» и команды stop" },
+        "steps": { "type": "array", "items": { "$ref": "#/definitions/step" }, "description": "Несколько действий по очереди" },
+        "command": { "type": "string", "description": "Команда cmd; без admin/window выполняется прямо в окне Multitool" },
+        "autostart": { "type": "boolean", "description": "Запускать, когда Multitool стартует вместе с Windows" }
+      }
+    }
+  },
+  "properties": {
+    "settings": {
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "description": "Текст большого баннера" },
+        "subtitle": { "type": "string" },
+        "theme": { "type": "string", "description": "fresh, neon, sunset, ocean, dracula, matrix или своя из themes" },
+        "banner_font": { "type": "string", "description": "Шрифт pyfiglet: ansi_shadow, slant, big, doom…" },
+        "powerline": { "type": "boolean", "description": "Стрелки powerline в статус-строке" },
+        "show_status_bar": { "type": "boolean" },
+        "show_descriptions": { "type": "boolean" },
+        "show_commands": { "type": "boolean", "description": "Панель встроенных команд под меню" },
+        "auto_refresh": { "type": "number", "description": "Обновлять экран каждые N секунд (0 — выкл.)" },
+        "close_after_launch": { "type": "boolean", "description": "Закрывать Multitool после запуска программы" },
+        "single_instance": { "type": "boolean", "description": "Повторный запуск переключает на уже открытое окно" },
+        "use_windows_terminal": { "type": "boolean" },
+        "window_title": { "type": "string" },
+        "window": {
+          "type": "object",
+          "properties": {
+            "columns": { "type": "integer" },
+            "rows": { "type": "integer" },
+            "center": { "type": "boolean" }
+          }
+        },
+        "hotkey": { "type": "string", "description": "Глобальная горячая клавиша «открыть/свернуть», напр. Alt+` (клавиша ё), Ctrl+Alt+T или Ctrl+Alt+F1. Подхватывается без перезапуска" },
+        "open_on_startup": { "type": "boolean", "description": "Открывать окно Multitool при входе в Windows (иначе в фоне только горячая клавиша)" },
+        "editor": { "type": "string", "description": "auto, code, notepad или путь к редактору" },
+        "autostart_delay": { "type": "number", "description": "Задержка в секундах при автозапуске с Windows" },
+        "net_targets": {
+          "type": "array",
+          "description": "Сайты для команды net",
+          "items": { "type": "object", "properties": { "name": { "type": "string" }, "url": { "type": "string" } } }
+        }
+      }
+    },
+    "sections": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "items"],
+        "properties": {
+          "name": { "type": "string" },
+          "icon": { "type": "string" },
+          "color": { "type": "string", "description": "Свой цвет секции, напр. #FF2E88" },
+          "items": { "type": "array", "items": { "$ref": "#/definitions/item" } }
+        }
+      }
+    },
+    "themes": {
+      "type": "object",
+      "description": "Свои темы: { \"моя\": { \"gradient\": [...], \"accents\": [...], \"bar\": [...] } }",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "gradient": { "type": "array", "items": { "type": "string" } },
+          "accents": { "type": "array", "items": { "type": "string" } },
+          "bar": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    }
+  }
+}
