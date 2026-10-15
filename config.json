@@ -6,6 +6,7 @@
     "theme": "fresh",
     "hotkey": "Alt+`",
     "auto_refresh": 20,
+    "if_running": "focus",
     "close_after_launch": false,
     "window": {
       "columns": 124,
@@ -68,6 +69,7 @@
           "description": "клиент + античит",
           "path": "%LOCALAPPDATA%\\FACEIT\\FACEIT.exe",
           "process": "FACEIT.exe",
+          "if_running": "launch",
           "aliases": ["faceit", "fc"]
         },
         {
@@ -75,6 +77,7 @@
           "icon": "🎮",
           "path": "C:\\Program Files (x86)\\Steam\\steam.exe",
           "process": "steam.exe",
+          "if_running": "launch",
           "aliases": ["steam"]
         },
         {
@@ -84,6 +87,7 @@
           "path": "%LOCALAPPDATA%\\Discord\\Update.exe",
           "args": "--processStart Discord.exe",
           "process": "Discord.exe",
+          "if_running": "launch",
           "aliases": ["ds"]
         },
         {
@@ -91,6 +95,7 @@
           "icon": "📨",
           "path": "%APPDATA%\\Telegram Desktop\\Telegram.exe",
           "process": "Telegram.exe",
+          "if_running": "launch",
           "aliases": ["tg"]
         }
       ]

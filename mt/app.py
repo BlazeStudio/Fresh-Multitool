@@ -18,7 +18,7 @@ from rich.console import Console
 
 from . import config as cfg
 from . import ui
-from .launcher import is_running, launch, running_names
+from .launcher import already_running, is_running, launch, running_names
 from .themes import get_theme
 from .winsys import center_window, claim_instance, find_windows, set_console_title
 
@@ -212,6 +212,10 @@ class App:
     # ─── запуск ──────────────────────────────────────────────────────────
 
     def run_item(self, item: cfg.Item) -> Out:
+        names = running_names()  # свежий список: программу могли закрыть после перерисовки
+        skipped = already_running(item, names)
+        if skipped:
+            return Out(redraw=True, message=skipped.message, kind=skipped.kind)
         if item.admin:
             self.say(f"{item.name}: запрос прав администратора…", "warn")
 
@@ -221,17 +225,18 @@ class App:
 
         if item.kind == "command" and not item.admin and not item.raw.get("window"):
             ui.section_title(self.console, self.theme, f"{item.icon} {item.name}", self.theme["accents"][3])
-            result = launch(item, self.names, on_wait)
-            self.say(result.message, "ok" if result.ok else "err")
+            result = launch(item, names, on_wait)
+            self.say(result.message, result.kind)
             self.on_dashboard = False
             return Out()
 
         with self.console.status(f"[bold]Запускаю {item.name}…", spinner="dots"):
-            result = launch(item, self.names, on_wait)
-            time.sleep(0.6)
-        if result.ok and self.config.settings["close_after_launch"]:
+            result = launch(item, names, on_wait)
+            if result.launched:
+                time.sleep(0.6)  # чтобы индикатор «● работает» успел загореться
+        if result.ok and result.launched and self.config.settings["close_after_launch"]:
             return Out(exit=True)
-        return Out(redraw=True, message=result.message, kind="ok" if result.ok else "err")
+        return Out(redraw=True, message=result.message, kind=result.kind)
 
     def dispatch(self, line: str) -> Out:
         from .commands import COMMANDS, find_command
@@ -248,12 +253,13 @@ class App:
         if all(items):
             outs = [self.run_item(item) for item in items]
             messages = [o.message for o in outs if o.message]
-            failed = any(o.kind == "err" for o in outs)
+            kinds = {o.kind for o in outs}
+            kind = "err" if "err" in kinds else "info" if kinds == {"info"} else "ok"
             if any(o.exit for o in outs):
                 return Out(exit=True)
             if not any(o.redraw for o in outs):
                 return Out()
-            return Out(redraw=True, message="  ·  ".join(messages), kind="err" if failed else "ok")
+            return Out(redraw=True, message="  ·  ".join(messages), kind=kind)
 
         name, args = words[0].lower(), words[1:]
         command = find_command(name)

@@ -176,9 +176,28 @@ def find_windows(title: str) -> list[int]:
     return found
 
 
+def process_windows(pids: set[int]) -> list[int]:
+    """Главные окна процессов: видимые (или свёрнутые), без владельца, с заголовком."""
+    found: list[int] = []
+    pid = wintypes.DWORD()
+
+    @ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
+    def callback(hwnd, _):
+        if user32.IsWindowVisible(hwnd) and not user32.GetWindow(hwnd, 4) and user32.GetWindowTextLengthW(hwnd):
+            user32.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
+            if pid.value in pids:
+                found.append(hwnd)
+        return True
+
+    user32.EnumWindows(callback, 0)
+    return found
+
+
 def focus_window(hwnd: int) -> None:
     if user32.IsIconic(hwnd):
-        user32.ShowWindow(hwnd, 9)  # SW_RESTORE
+        # Async: обычный ShowWindow ждёт, пока чужая программа обработает запрос, —
+        # зависшее приложение подвесило бы и Multitool.
+        user32.ShowWindowAsync(hwnd, 9)  # SW_RESTORE
     # Нажатие Alt снимает запрет Windows на перехват фокуса фоновым процессом.
     user32.keybd_event(0x12, 0, 0, 0)
     user32.keybd_event(0x12, 0, 2, 0)

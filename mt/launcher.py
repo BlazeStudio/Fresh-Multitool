@@ -11,13 +11,20 @@ from pathlib import Path
 import psutil
 
 from .config import Item, expand
-from .winsys import shell_execute
+from .winsys import focus_window, process_windows, shell_execute
 
 
 @dataclass
 class Result:
     ok: bool
     message: str
+    launched: bool = True  # False — программа уже работала, ничего не запускали
+
+    @property
+    def kind(self) -> str:
+        if not self.ok:
+            return "err"
+        return "ok" if self.launched else "info"
 
 
 def running_names() -> set[str]:
@@ -95,7 +102,27 @@ def run_command(command: str, admin: bool = False, window: str = "") -> int | No
     return subprocess.call(command, shell=True)
 
 
+def already_running(item: Item, names: set[str]) -> Result | None:
+    """Что делать, если программа пункта уже запущена (настройка if_running).
+    None — запускать как обычно. Пункты со steps проверяют каждый шаг сами (unless_running)."""
+    if item.if_running == "launch" or item.kind == "steps" or not item.process or not is_running(item, names):
+        return None
+    if item.if_running == "focus":
+        wanted = {p.lower() for p in item.process}
+        pids = {p.pid for p in psutil.process_iter(["name"]) if (p.info.get("name") or "").lower() in wanted}
+        windows = process_windows(pids)
+        if windows:
+            focus_window(windows[0])
+            return Result(True, f"{item.name} уже запущен — переключаю на его окно", launched=False)
+        return Result(True, f"{item.name} уже запущен (работает в фоне или в трее)", launched=False)
+    return Result(True, f"{item.name} уже запущен — повторно не запускаю", launched=False)
+
+
 def launch(item: Item, names: set[str] | None = None, on_wait=None) -> Result:
+    names = names if names is not None else running_names()
+    skipped = already_running(item, names)
+    if skipped:
+        return skipped
     try:
         if item.kind == "command":
             code = run_command(item.command, item.admin, item.raw.get("window", ""))
@@ -104,7 +131,6 @@ def launch(item: Item, names: set[str] | None = None, on_wait=None) -> Result:
             return Result(True, f"Выполнено: {item.name}")
 
         if item.kind == "steps":
-            names = names if names is not None else running_names()
             done = 0
             skipped_previous = False
             for step in item.steps:
@@ -124,7 +150,9 @@ def launch(item: Item, names: set[str] | None = None, on_wait=None) -> Result:
                     launch_target(step["path"], step.get("args", ""), step.get("cwd", ""),
                                   bool(step.get("admin")), step.get("window", "normal"))
                 done += 1
-            return Result(True, f"Запущено: {item.name}" + ("" if done else " (всё уже работало)"))
+            if not done:
+                return Result(True, f"{item.name}: всё уже работает", launched=False)
+            return Result(True, f"Запущено: {item.name}")
 
         launch_target(item.path, item.args, item.cwd, item.admin, item.window)
         return Result(True, f"Запущено: {item.name}")

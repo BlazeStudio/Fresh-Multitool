@@ -24,6 +24,7 @@ DEFAULT_SETTINGS: dict = {
     "show_descriptions": True,
     "show_commands": True,
     "auto_refresh": 20,
+    "if_running": "focus",
     "close_after_launch": False,
     "single_instance": True,
     "use_windows_terminal": True,
@@ -62,6 +63,13 @@ DEFAULT_CONFIG: dict = {
 }
 
 
+# Что делать, если программа пункта уже запущена:
+#   focus  — не запускать, а переключиться на её окно;
+#   skip   — просто не запускать;
+#   launch — запускать как обычно (для трей-программ, которые сами не дублируются).
+IF_RUNNING = ("focus", "skip", "launch")
+
+
 class ConfigError(Exception):
     pass
 
@@ -83,6 +91,7 @@ class Item:
     command: str = ""
     aliases: list[str] = field(default_factory=list)
     autostart: bool = False
+    if_running: str = "focus"
     raw: dict = field(default_factory=dict)
 
     @property
@@ -151,6 +160,8 @@ def _parse(raw: dict, mtime: float) -> Config:
     if not isinstance(raw, dict):
         raise ConfigError("Корень config.json должен быть объектом { ... }")
     settings = _merge_settings(raw.get("settings", {}))
+    if settings["if_running"] not in IF_RUNNING:
+        raise ConfigError(f'settings.if_running: "{settings["if_running"]}" — допустимо {", ".join(IF_RUNNING)}')
     sections_raw = raw.get("sections", [])
     if not isinstance(sections_raw, list):
         raise ConfigError('"sections" должен быть списком [ ... ]')
@@ -185,6 +196,9 @@ def _parse(raw: dict, mtime: float) -> Config:
                 counter += 1
             if key.lower() in seen_keys:
                 raise ConfigError(f'{where}: ключ "{key}" уже занят другим пунктом')
+            if_running = str(it.get("if_running") or settings["if_running"])
+            if if_running not in IF_RUNNING:
+                raise ConfigError(f'{where} ({it["name"]}): if_running "{if_running}" — допустимо {", ".join(IF_RUNNING)}')
             seen_keys.add(key.lower())
             items.append(
                 Item(
@@ -203,6 +217,7 @@ def _parse(raw: dict, mtime: float) -> Config:
                     command=str(it.get("command") or ""),
                     aliases=_as_list(it.get("aliases")),
                     autostart=bool(it.get("autostart", False)),
+                    if_running=if_running,
                     raw=it,
                 )
             )

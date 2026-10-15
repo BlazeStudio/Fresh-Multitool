@@ -7,6 +7,10 @@
       "description": "Имя процесса или список имён",
       "oneOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" } }]
     },
+    "if_running": {
+      "description": "Если программа уже запущена (по полю process): focus — не запускать, переключиться на её окно; skip — просто не запускать; launch — запускать как обычно (для трей-программ вроде Steam/Telegram, которые сами не дублируются)",
+      "enum": ["focus", "skip", "launch"]
+    },
     "window": {
       "description": "Как показать окно запускаемой программы",
       "enum": ["normal", "minimized", "maximized", "hidden"]
@@ -42,7 +46,8 @@
         "cwd": { "type": "string", "description": "Рабочая папка (по умолчанию — папка файла)" },
         "admin": { "type": "boolean", "description": "Запускать от имени администратора" },
         "window": { "$ref": "#/definitions/window" },
-        "process": { "$ref": "#/definitions/names", "description": "Процесс для индикатора «● работает» и команды stop" },
+        "process": { "$ref": "#/definitions/names", "description": "Процесс для индикатора «● работает», команды stop и проверки if_running" },
+        "if_running": { "$ref": "#/definitions/if_running" },
         "steps": { "type": "array", "items": { "$ref": "#/definitions/step" }, "description": "Несколько действий по очереди" },
         "command": { "type": "string", "description": "Команда cmd; без admin/window выполняется прямо в окне Multitool" },
         "autostart": { "type": "boolean", "description": "Запускать, когда Multitool стартует вместе с Windows" }
@@ -62,6 +67,7 @@
         "show_descriptions": { "type": "boolean" },
         "show_commands": { "type": "boolean", "description": "Панель встроенных команд под меню" },
         "auto_refresh": { "type": "number", "description": "Обновлять экран каждые N секунд (0 — выкл.)" },
+        "if_running": { "$ref": "#/definitions/if_running", "description": "Поведение по умолчанию для всех пунктов, если программа уже запущена. У пункта можно переопределить своим if_running" },
         "close_after_launch": { "type": "boolean", "description": "Закрывать Multitool после запуска программы" },
         "single_instance": { "type": "boolean", "description": "Повторный запуск переключает на уже открытое окно" },
         "use_windows_terminal": { "type": "boolean" },
