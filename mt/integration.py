@@ -225,9 +225,10 @@ def install(autostart: bool = True) -> None:
     from rich.console import Console
     from rich.text import Text
 
+    from .discover import ensure_config
+
     console = Console(highlight=False)
     theme = get_theme("fresh")
-    s = _settings()
 
     def step(ok: bool, title: str, detail: str = "") -> None:
         line = Text()
@@ -240,6 +241,14 @@ def install(autostart: bool = True) -> None:
     console.print()
     console.print(Text("  FRESH MULTITOOL · установка", style=f"bold {theme['accents'][0]}"))
     console.print()
+
+    with console.status("[bold]Ищу установленные программы…", spinner="dots"):
+        found = ensure_config()
+    if found is None:
+        step(True, "Конфиг", f"{cfg.CONFIG_PATH.name} уже есть — не трогаю")
+    else:
+        step(True, "Конфиг", f"создан {cfg.CONFIG_PATH.name}, нашёл: {', '.join(found) or 'ничего, добавь программы командой add'}")
+    s = _settings()
 
     try:
         added = add_to_user_path(str(BIN_DIR))

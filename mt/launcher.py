@@ -118,14 +118,16 @@ def already_running(item: Item, names: set[str]) -> Result | None:
     return Result(True, f"{item.name} уже запущен — повторно не запускаю", launched=False)
 
 
-def launch(item: Item, names: set[str] | None = None, on_wait=None) -> Result:
+def launch(item: Item, names: set[str] | None = None, on_wait=None, extra: str = "") -> Result:
+    """extra — аргументы, дописанные после пункта в строке ввода; добавляются к args/command."""
     names = names if names is not None else running_names()
     skipped = already_running(item, names)
     if skipped:
         return skipped
     try:
         if item.kind == "command":
-            code = run_command(item.command, item.admin, item.raw.get("window", ""))
+            command = f"{item.command} {extra}" if extra else item.command
+            code = run_command(command, item.admin, item.raw.get("window", ""))
             if code not in (None, 0):
                 return Result(False, f"{item.name}: команда завершилась с кодом {code}")
             return Result(True, f"Выполнено: {item.name}")
@@ -154,7 +156,10 @@ def launch(item: Item, names: set[str] | None = None, on_wait=None) -> Result:
                 return Result(True, f"{item.name}: всё уже работает", launched=False)
             return Result(True, f"Запущено: {item.name}")
 
-        launch_target(item.path, item.args, item.cwd, item.admin, item.window)
+        args = item.args
+        if extra:
+            args = f"{_args_to_str(args)} {extra}".strip()
+        launch_target(item.path, args, item.cwd, item.admin, item.window)
         return Result(True, f"Запущено: {item.name}")
     except OSError as exc:
         return Result(False, f"{item.name}: {exc}")

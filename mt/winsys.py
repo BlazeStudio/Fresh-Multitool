@@ -328,17 +328,31 @@ $s.Save()
         raise OSError(result.stderr.decode("utf-8", "replace").strip() or "не удалось создать ярлык")
 
 
-def read_shortcut(lnk: Path) -> dict:
+def read_shortcuts(lnks: list[Path]) -> dict[str, dict]:
+    """Цели ярлыков .lnk одним вызовом PowerShell: {путь: {target, args, cwd}}."""
+    if not lnks:
+        return {}
+    paths = ", ".join(_ps_quote(str(p)) for p in lnks)
     script = f"""
-$s = (New-Object -ComObject WScript.Shell).CreateShortcut({_ps_quote(str(lnk))})
 [Console]::OutputEncoding = [Text.Encoding]::UTF8
-@{{target=$s.TargetPath; args=$s.Arguments; cwd=$s.WorkingDirectory}} | ConvertTo-Json -Compress
+$sh = New-Object -ComObject WScript.Shell
+@(foreach ($p in @({paths})) {{
+  $s = $sh.CreateShortcut($p)
+  @{{lnk=$p; target=$s.TargetPath; args=$s.Arguments; cwd=$s.WorkingDirectory}}
+}}) | ConvertTo-Json -Compress
 """
-    result = run_powershell(script)
+    result = run_powershell(script, timeout=60)
     try:
-        return json.loads(result.stdout.decode("utf-8", "replace"))
+        data = json.loads(result.stdout.decode("utf-8", "replace") or "[]")
     except json.JSONDecodeError:
         return {}
+    if isinstance(data, dict):
+        data = [data]
+    return {entry["lnk"]: entry for entry in data}
+
+
+def read_shortcut(lnk: Path) -> dict:
+    return read_shortcuts([lnk]).get(str(lnk), {})
 
 
 def startup_dir() -> Path:

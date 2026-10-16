@@ -50,7 +50,10 @@
         "if_running": { "$ref": "#/definitions/if_running" },
         "steps": { "type": "array", "items": { "$ref": "#/definitions/step" }, "description": "Несколько действий по очереди" },
         "command": { "type": "string", "description": "Команда cmd; без admin/window выполняется прямо в окне Multitool" },
-        "autostart": { "type": "boolean", "description": "Запускать, когда Multitool стартует вместе с Windows" }
+        "autostart": { "type": "boolean", "description": "Запускать, когда Multitool стартует вместе с Windows" },
+        "find": { "type": "string", "description": "Только для config.example.json: найти программу в меню Пуск по названию, если path не подошёл" },
+        "detect": { "$ref": "#/definitions/names", "description": "Только для config.example.json: пункт попадёт в config.json, если существует один из этих путей" },
+        "steam_app": { "type": "integer", "description": "Только для config.example.json: пункт попадёт в config.json, если игра с этим Steam AppID установлена" }
       }
     }
   },

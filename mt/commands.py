@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import difflib
-import re
 import shutil
 import subprocess
 import time
@@ -24,7 +23,8 @@ from .app import App, Out
 from .integration import autostart_enabled, set_autostart
 from .launcher import is_url, kill_processes
 from .themes import all_theme_names, get_theme, gradient_text
-from .winsys import read_shortcut, shell_execute, start_menu_shortcuts
+from .discover import search_shortcuts, shortcut_entry
+from .winsys import shell_execute
 
 
 @dataclass
@@ -141,9 +141,11 @@ def top(app: App, args: list[str]) -> Out:
     return Out()
 
 
-@command("net", "ping", "сеть", usage="net", help="доступны ли Discord, YouTube и др. (проверка zapret)", group="Система")
+@command("net", "ping", "сеть", usage="net", help="доступны ли Discord, YouTube и др. (работает ли обход блокировок)", group="Система")
 def net(app: App, args: list[str]) -> Out:
-    tools.net_check(app.console, app.theme, app.config.settings["net_targets"])
+    bypass = next((i for i in app.config.items if any(w in i.name.lower() for w in ("zapret", "vpn", "обход"))), None)
+    hint = f"Запусти «{bypass.name}» — клавиша {bypass.key}." if bypass else ""
+    tools.net_check(app.console, app.theme, app.config.settings["net_targets"], hint)
     return Out()
 
 
@@ -240,37 +242,6 @@ def guess_icon(name: str, path: str) -> str:
     return "🚀"
 
 
-def search_shortcuts(query: str) -> list[Path]:
-    shortcuts = start_menu_shortcuts()
-    low = query.lower()
-    matches = [p for p in shortcuts if low in p.stem.lower()]
-    if not matches:
-        stems = {p.stem.lower(): p for p in shortcuts}
-        matches = [stems[s] for s in difflib.get_close_matches(low, list(stems), n=8, cutoff=0.5)]
-    def rank(p: Path):
-        stem = p.stem.lower()
-        words = re.split(r"\W+", stem)
-        # Точное имя → целое слово («obs» → OBS Studio, а не Obsidian) → начало имени → короче.
-        return stem != low, low not in words, not stem.startswith(low), len(stem)
-
-    matches.sort(key=rank)
-    return matches
-
-
-def _from_shortcut(lnk: Path) -> dict:
-    info = read_shortcut(lnk)
-    target = info.get("target") or ""
-    if target and Path(target).exists():
-        entry = {"name": lnk.stem, "path": target}
-        if info.get("args"):
-            entry["args"] = info["args"]
-        cwd = info.get("cwd") or ""
-        if cwd and Path(cwd) != Path(target).parent:
-            entry["cwd"] = cwd
-        return entry
-    return {"name": lnk.stem, "path": str(lnk)}
-
-
 def find_target(query: str) -> dict | list[Path] | None:
     """Путь/ссылка → готовый пункт; название программы → список ярлыков из меню Пуск."""
     if is_url(query):
@@ -279,7 +250,7 @@ def find_target(query: str) -> dict | list[Path] | None:
     path = Path(cfg.expand(query))
     if path.exists():
         if path.suffix.lower() == ".lnk":
-            return _from_shortcut(path)
+            return shortcut_entry(path)
         return {"name": path.stem if path.is_file() else path.name, "path": query}
     return search_shortcuts(query)[:9] or None
 
@@ -336,7 +307,7 @@ def add(app: App, args: list[str]) -> Out:
         if not lnk:
             return Out(message="Отменено", kind="warn")
         with app.console.status("[bold]Читаю ярлык…", spinner="dots"):
-            entry = _from_shortcut(lnk)
+            entry = shortcut_entry(lnk)
     if not entry:
         return Out(message=f"Не нашёл «{query}» — укажи полный путь", kind="err")
 
@@ -481,13 +452,14 @@ def help_cmd(app: App, args: list[str]) -> Out:
     tips = Text()
     tips.append("Номер", style="bold")
     tips.append(" пункта — запуск, несколько через пробел — запуск по очереди (1 3).\n", style=t["text"])
+    examples = [i.aliases[0] for i in app.config.items if i.aliases][:3]
     tips.append("Название", style="bold")
-    tips.append(" или алиас тоже работают: ", style=t["text"])
-    tips.append("cs", style=f"bold {t['accents'][1]}")
-    tips.append(", ", style=t["text"])
-    tips.append("hh", style=f"bold {t['accents'][1]}")
-    tips.append(", ", style=t["text"])
-    tips.append("telegram", style=f"bold {t['accents'][1]}")
+    tips.append(" или алиас тоже работают", style=t["text"])
+    for n, alias in enumerate(examples):
+        tips.append(": " if n == 0 else ", ", style=t["text"])
+        tips.append(alias, style=f"bold {t['accents'][1]}")
+    tips.append(". После пункта можно дописать аргументы: ", style=t["text"])
+    tips.append("N --флаг", style=f"bold {t['accents'][1]}")
     tips.append(".\nВсё меню настраивается в ", style=t["text"])
     tips.append(str(cfg.CONFIG_PATH), style=f"bold {t['accents'][3]}")
     tips.append(" — описание полей в README.md.", style=t["text"])

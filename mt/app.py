@@ -211,7 +211,7 @@ class App:
 
     # ─── запуск ──────────────────────────────────────────────────────────
 
-    def run_item(self, item: cfg.Item) -> Out:
+    def run_item(self, item: cfg.Item, extra: str = "") -> Out:
         names = running_names()  # свежий список: программу могли закрыть после перерисовки
         skipped = already_running(item, names)
         if skipped:
@@ -224,14 +224,15 @@ class App:
                 time.sleep(seconds)
 
         if item.kind == "command" and not item.admin and not item.raw.get("window"):
-            ui.section_title(self.console, self.theme, f"{item.icon} {item.name}", self.theme["accents"][3])
-            result = launch(item, names, on_wait)
+            title = f"{item.icon} {item.name}" + (f"  {extra}" if extra else "")
+            ui.section_title(self.console, self.theme, title, self.theme["accents"][3])
+            result = launch(item, names, on_wait, extra)
             self.say(result.message, result.kind)
             self.on_dashboard = False
             return Out()
 
         with self.console.status(f"[bold]Запускаю {item.name}…", spinner="dots"):
-            result = launch(item, names, on_wait)
+            result = launch(item, names, on_wait, extra)
             if result.launched:
                 time.sleep(0.6)  # чтобы индикатор «● работает» успел загореться
         if result.ok and result.launched and self.config.settings["close_after_launch"]:
@@ -261,11 +262,16 @@ class App:
                 return Out()
             return Out(redraw=True, message="  ·  ".join(messages), kind=kind)
 
+        # Пункт и аргументы для него: «cw --dry-run», «3 -novid».
+        first_item = self.config.find(words[0])
+        rest = line.split(None, 1)[1] if len(line.split(None, 1)) > 1 else ""
+        if first_item and rest.startswith("-"):
+            return self.run_item(first_item, rest)
+
         name, args = words[0].lower(), words[1:]
         command = find_command(name)
         if command:
-            raw_args = line.split(None, 1)[1] if len(line.split(None, 1)) > 1 else ""
-            return command.func(self, args if command.split_args else ([raw_args] if raw_args else []))
+            return command.func(self, args if command.split_args else ([rest] if rest else []))
 
         # Поиск по названию пункта: «discord», «телеграм» и т.п.
         query = line.lower()
@@ -334,6 +340,10 @@ class App:
         )
         self.console.file.write("\x1b[2J\x1b[3J\x1b[H")
         self.redraw(first=True)
+        if self.config.created is not None:
+            found = self.config.created
+            self.say(f"Создал {cfg.CONFIG_PATH.name}: нашёл программ — {len(found)}. "
+                     "Свои добавляй командой add, а всё остальное — edit", "info")
         self.check_hotkey()
         if self.autostart:
             self.run_autostart_items()

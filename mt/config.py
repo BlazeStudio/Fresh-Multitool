@@ -39,7 +39,6 @@ DEFAULT_SETTINGS: dict = {
         {"name": "YouTube", "url": "https://www.youtube.com"},
         {"name": "Google", "url": "https://www.google.com"},
         {"name": "Steam", "url": "https://store.steampowered.com"},
-        {"name": "hh.ru", "url": "https://hh.ru"},
         {"name": "Яндекс", "url": "https://ya.ru"},
     ],
 }
@@ -122,6 +121,7 @@ class Config:
     sections: list[Section]
     themes: dict
     mtime: float
+    created: list[str] | None = None  # конфиг только что собран автопоиском: что нашлось
 
     @property
     def items(self) -> list[Item]:
@@ -233,8 +233,9 @@ def _parse(raw: dict, mtime: float) -> Config:
 
 
 def load() -> Config:
-    if not CONFIG_PATH.exists():
-        save(DEFAULT_CONFIG)
+    from .discover import ensure_config  # discover сам импортирует этот модуль
+
+    created = ensure_config()
     text = CONFIG_PATH.read_text(encoding="utf-8-sig")
     try:
         raw = json.loads(text)
@@ -244,7 +245,9 @@ def load() -> Config:
             "Частые причины: лишняя запятая в конце списка, одинарные кавычки, "
             "одиночный \\ в пути (пиши \\\\ или /)."
         ) from exc
-    return _parse(raw, CONFIG_PATH.stat().st_mtime)
+    config = _parse(raw, CONFIG_PATH.stat().st_mtime)
+    config.created = created
+    return config
 
 
 _SCALAR = r'(?:"(?:[^"\\\n]|\\.)*"|-?\d+(?:\.\d+)?|true|false|null)'

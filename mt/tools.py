@@ -161,7 +161,7 @@ def _check_url(name: str, url: str, timeout: float = 5.0) -> tuple[str, str, flo
         return name, url, None, text[:60]
 
 
-def net_check(console: Console, theme: dict, targets: list[dict]) -> None:
+def net_check(console: Console, theme: dict, targets: list[dict], bypass_hint: str = "") -> None:
     global _ssl_context
     section_title(console, theme, "📡 ДОСТУПНОСТЬ САЙТОВ", theme["accents"][3])
     with console.status("[bold]Проверяю…", spinner="dots"):
@@ -182,7 +182,8 @@ def net_check(console: Console, theme: dict, targets: list[dict]) -> None:
             table.add_row(name, Text("● доступен", style=f"bold {theme['ok']}"), Text(f"{ms:.0f} мс", style=color), detail)
     console.print(table)
     if any(ms is None for _, _, ms, _ in results):
-        console.print(Text("  Discord/YouTube недоступны? Запусти zapret из меню.", style=theme["muted"]))
+        console.print(Text(f"  Что-то недоступно? {bypass_hint or 'Возможно, нужен VPN или обход блокировок.'}",
+                           style=theme["muted"]))
 
 
 def ip_info(console: Console, theme: dict) -> None:

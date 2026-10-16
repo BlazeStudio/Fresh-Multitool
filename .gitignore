@@ -5,3 +5,6 @@ multitool.log
 config.json.bak
 config.json.tmp
 .hotkey_status
+
+# личный конфиг — создаётся при первом запуске из config.example.json
+config.json

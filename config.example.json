@@ -1,0 +1,157 @@
+{
+  "$schema": "./config.schema.json",
+  "settings": {
+    "theme": "fresh",
+    "hotkey": "Alt+`",
+    "if_running": "focus"
+  },
+  "sections": [
+    {
+      "name": "Игры",
+      "icon": "🎮",
+      "items": [
+        {
+          "name": "Steam",
+          "icon": "🎮",
+          "path": "C:\\Program Files (x86)\\Steam\\steam.exe",
+          "find": "Steam",
+          "process": "steam.exe",
+          "if_running": "launch",
+          "aliases": ["steam"]
+        },
+        {
+          "name": "Counter-Strike 2",
+          "icon": "🎯",
+          "description": "через Steam",
+          "path": "steam://rungameid/730",
+          "steam_app": 730,
+          "process": "cs2.exe",
+          "aliases": ["cs", "cs2", "кс"]
+        },
+        {
+          "name": "Dota 2",
+          "icon": "🐉",
+          "description": "через Steam",
+          "path": "steam://rungameid/570",
+          "steam_app": 570,
+          "process": "dota2.exe",
+          "aliases": ["dota"]
+        },
+        {
+          "name": "FACEIT",
+          "icon": "🏆",
+          "path": "%LOCALAPPDATA%\\FACEIT\\FACEIT.exe",
+          "process": "FACEIT.exe",
+          "if_running": "launch",
+          "aliases": ["faceit"]
+        },
+        {
+          "name": "Epic Games",
+          "icon": "🎮",
+          "find": "Epic Games Launcher",
+          "if_running": "launch",
+          "aliases": ["epic"]
+        },
+        {
+          "name": "Battle.net",
+          "icon": "🎮",
+          "find": "Battle.net",
+          "process": "Battle.net.exe",
+          "if_running": "launch"
+        }
+      ]
+    },
+    {
+      "name": "Инструменты",
+      "icon": "🧰",
+      "items": [
+        {
+          "name": "OBS Studio",
+          "icon": "🎥",
+          "description": "запись и стримы",
+          "find": "OBS Studio",
+          "aliases": ["obs"]
+        },
+        {
+          "name": "VS Code",
+          "icon": "💻",
+          "path": "%LOCALAPPDATA%\\Programs\\Microsoft VS Code\\Code.exe",
+          "find": "Visual Studio Code",
+          "process": "Code.exe",
+          "aliases": ["code"]
+        },
+        {
+          "name": "MSI Afterburner",
+          "icon": "🔥",
+          "find": "MSI Afterburner"
+        },
+        {
+          "name": "Диспетчер задач",
+          "icon": "📊",
+          "path": "taskmgr.exe",
+          "process": "Taskmgr.exe",
+          "aliases": ["tm"]
+        },
+        {
+          "name": "Загрузки",
+          "icon": "📥",
+          "path": "%USERPROFILE%\\Downloads"
+        }
+      ]
+    },
+    {
+      "name": "Связь и музыка",
+      "icon": "💬",
+      "items": [
+        {
+          "name": "Discord",
+          "icon": "💬",
+          "path": "%LOCALAPPDATA%\\Discord\\Update.exe",
+          "args": "--processStart Discord.exe",
+          "process": "Discord.exe",
+          "if_running": "launch",
+          "aliases": ["ds"]
+        },
+        {
+          "name": "Telegram",
+          "icon": "📨",
+          "path": "%APPDATA%\\Telegram Desktop\\Telegram.exe",
+          "find": "Telegram",
+          "process": "Telegram.exe",
+          "if_running": "launch",
+          "aliases": ["tg"]
+        },
+        {
+          "name": "Spotify",
+          "icon": "🎵",
+          "find": "Spotify",
+          "if_running": "launch"
+        }
+      ]
+    },
+    {
+      "name": "Браузеры",
+      "icon": "🌐",
+      "items": [
+        {
+          "name": "Google Chrome",
+          "icon": "🌐",
+          "find": "Google Chrome",
+          "aliases": ["chrome"]
+        },
+        {
+          "name": "Яндекс Браузер",
+          "icon": "🌐",
+          "find": "Яндекс Браузер",
+          "aliases": ["yandex"]
+        },
+        {
+          "name": "YouTube",
+          "icon": "📺",
+          "path": "https://www.youtube.com",
+          "aliases": ["yt"]
+        }
+      ]
+    }
+  ]
+}
